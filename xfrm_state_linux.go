@@ -125,6 +125,7 @@ type XfrmState struct {
 	OSeqMayWrap   bool
 	Replay        *XfrmReplayState
 	Selector      *XfrmPolicy
+	AFUnspec      bool // XFRM_STATE_AF_UNSPEC: allow tunnel mode SA to handle traffic of any address family
 }
 
 func (sa XfrmState) String() string {
@@ -276,6 +277,12 @@ func (h *Handle) xfrmStateAddOrUpdate(state *XfrmState, nlProto int) error {
 		}
 		msg.Flags |= nl.XFRM_STATE_ESN
 		msg.ReplayWindow = 0
+	}
+
+	// XFRM_STATE_AF_UNSPEC: allow tunnel mode SA to handle traffic of any address family
+	// Reference: strongswan kernel_netlink_ipsec.c:1857
+	if state.AFUnspec {
+		msg.Flags |= 0x20 // XFRM_STATE_AF_UNSPEC = 32
 	}
 
 	limitsToLft(state.Limits, &msg.Lft)
